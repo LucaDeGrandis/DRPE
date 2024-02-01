@@ -59,6 +59,7 @@ def argparser():
     parser = argparse.ArgumentParser(description='Run the program')
     parser.add_argument('dataset', type=str, help='The datset path. It must be a jsonl file.')
     parser.add_argument('out_file', type=str, help='The output path. It must be a jsonl file.')
+    parser.add_argument('openai_key', type=str, help='The OpenAI key.')
     parser.add_argument('--verbose', action='store_true', help='Saves intermediate results.')
     parser.add_argument('--roles_generator', type=str, default='gpt-3.5-turbo-1106', help='THe model used to generate the dynamic roles.')
     parser.add_argument('--roles_generator_templates', type=int, default=32, help='THe model used to generate the dynamic roles.')
@@ -71,7 +72,7 @@ def __main__():
     dataset = load_jsonl_file(args.dataset)
 
     # Create the model
-    model = OpenAI(model=args.roles_generator, temperature=0, model_kwargs={'seed': 42})
+    model = OpenAI(model=args.roles_generator, temperature=0, openai_api_key=args.openai_key, model_kwargs={'seed': 42})
 
     results = []
 
