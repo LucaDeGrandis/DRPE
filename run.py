@@ -5,6 +5,7 @@ import os
 
 from sentence_transformers import SentenceTransformer
 
+from langchain.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain_openai import OpenAI
@@ -79,17 +80,18 @@ def distance_measure(
 
 
 def dynamic_roles_clutering(
-    generated_roles: List[str],
+    generated_roles: List[List[str]],
     model_name: str,
     n_clusters: int
 ):
     """ Clusters text using embeddings and k-means """
     # Create the embeddings
     embedding_model = SentenceTransformer(model_name)
+    roles_concatenated = [': '.join(x) for x in generated_roles]
     if 'uncased' in model_name.lower():
-        sentence_embeddings = embedding_model.encode([el.lower() for el in generated_roles])
+        sentence_embeddings = embedding_model.encode([el.lower() for el in roles_concatenated])
     else:
-        sentence_embeddings = embedding_model.encode(generated_roles)
+        sentence_embeddings = embedding_model.encode(roles_concatenated)
 
     # Run k-means
     kmeans = KMeans(n_clusters=n_clusters)
@@ -110,7 +112,7 @@ def dynamic_roles_clutering(
 
 def dynamic_role_parser(
     text: str
-):
+) -> Dict[str, str]:
     """ Parses the output of LLM to extract the dynamic roles
     
     Args:
@@ -126,9 +128,20 @@ def dynamic_role_parser(
             2. role 2: role description
             ...
     """
+    # parse the roles
     roles_raw = [x.strip() for x in text.split('\n')]
     roles_raw = list(filter(lambda x: x, roles_raw))
     roles = [x[3:].strip() for x in roles_raw]
+
+    # Save the role types and descriptions
+    types_descriptions = []
+    for role in roles:
+        role_split = role.split(':')
+        types_descriptions.append([
+            role_split[0].strip(),
+            ':'.join(role_split[1:])
+        ])
+
     return roles
 
 
@@ -162,13 +175,14 @@ def __main__():
         # Generate the roles
         coarse_grained_roles, fine_grained_roles = dynamic_roles_generator(roles_generator, _el['text'])
         roles = dynamic_role_parser(coarse_grained_roles) + dynamic_role_parser(fine_grained_roles)
-        roles = dynamic_roles_clutering(roles, args.embedding_gnerator, args.roles_clusters)
+        roles_concatenated = [': '.join(x) for x in roles]
+        roles_clustered = dynamic_roles_clutering(roles_concatenated, args.embedding_gnerator, args.roles_clusters)
         if args.verbose:
             res['generated_roles'] = {
                 'coarse_grained_roles': coarse_grained_roles,
                 'fine_grained_roles': fine_grained_roles
             }
-            res['clustered_roles'] = roles
+            res['clustered_roles'] = roles_clustered
             results.append(res)
         break
 
