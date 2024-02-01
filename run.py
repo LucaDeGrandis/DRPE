@@ -1,3 +1,4 @@
+from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain_openai import OpenAI
 from typing import List, Dict, Any
@@ -43,12 +44,12 @@ def dynamic_roles_generator(
     input_text: str,
 ):
     # Generate coarse grained roles
-    coarse_grained_prompt = DYNAMIC_TEMPLATES['coarse_grained']
+    coarse_grained_prompt = PromptTemplate.from_template(DYNAMIC_TEMPLATES['coarse_grained'])
     chain = LLMChain(llm=model, prompt=coarse_grained_prompt)
     coarse_grained_roles = chain.invoke(text=input_text)['text']
 
     # Generate fine grained roles
-    fine_grained_prompt = DYNAMIC_TEMPLATES['fine_grained']
+    fine_grained_prompt = PromptTemplate.from_template(DYNAMIC_TEMPLATES['fine_grained'])
     chain = LLMChain(llm=model, prompt=fine_grained_prompt)
     fine_grained_roles = chain.invoke(text=input_text)['text']
 
@@ -63,6 +64,7 @@ def argparser():
     parser.add_argument('--verbose', action='store_true', help='Saves intermediate results.')
     parser.add_argument('--roles_generator', type=str, default='gpt-3.5-turbo-1106', help='THe model used to generate the dynamic roles.')
     parser.add_argument('--roles_generator_templates', type=int, default=32, help='THe model used to generate the dynamic roles.')
+    return parser.parse_args()
 
 
 def __main__():
@@ -90,3 +92,7 @@ def __main__():
         break
 
     write_jsonl_file(args.out_file, results, overwrite=True)
+
+
+if __name__ == '__main__':
+    __main__()
