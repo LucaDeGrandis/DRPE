@@ -175,8 +175,7 @@ def __main__():
         # Generate the roles
         coarse_grained_roles, fine_grained_roles = dynamic_roles_generator(roles_generator, _el['text'])
         roles = dynamic_role_parser(coarse_grained_roles) + dynamic_role_parser(fine_grained_roles)
-        roles_concatenated = [': '.join(x) for x in roles]
-        roles_clustered = dynamic_roles_clutering(roles_concatenated, args.embedding_gnerator, args.roles_clusters)
+        roles_clustered = dynamic_roles_clutering(roles, args.embedding_gnerator, args.roles_clusters)
         if args.verbose:
             res['generated_roles'] = {
                 'coarse_grained_roles': coarse_grained_roles,
