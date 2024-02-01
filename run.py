@@ -11,6 +11,7 @@ from langchain.chains import LLMChain
 from langchain_openai import OpenAI
 
 from drpe.prompts.dynamic_roles import DYNAMIC_TEMPLATES
+from drpe.prompts.comparisons import COMPARISON_PROMPT, FEW_SHOT_PROMPT
 
 from sklearn.cluster import KMeans
 import numpy as np
@@ -145,6 +146,43 @@ def dynamic_role_parser(
     return roles
 
 
+def evaluator(
+    model,
+    input_document: str,
+    summaries: List[str],
+    roles: List[List[str]],
+):
+    """ Runs the evaluation of two summaries using the dynamic roles """
+    # Define the formatted roles for the few shot prompt template
+    examples = []
+    for line in roles:
+        examples.append({
+            'role_type': line.split(':')[0].strip(),
+            'role_description': line.split(':')[1].strip(),
+        })
+
+    example_prompt = PromptTemplate(
+        input_variables=["role_type", "role_description"], template=FEW_SHOT_PROMPT
+    )
+    prompt = FewShotPromptTemplate(
+        examples=examples,
+        example_prompt=example_prompt,
+        prefix=COMPARISON_PROMPT,
+        input_variables = ['text', 'summary_1', 'summary_2'],
+        suffix='',
+    )
+
+    # Evaluate the summaries
+    chain = LLMChain(llm=model, prompt=prompt)
+
+    return chain.invoke(input={
+        'text': input_document.replace('\n', ' ').replace('\t', ' ').replace('  ', ' '),
+        'summary_1': summaries[0],
+        'summary_2': summaries[1]
+    })
+
+
+
 def argparser():
     parser = argparse.ArgumentParser(description='Run the program')
     parser.add_argument('dataset', type=str, help='The datset path. It must be a jsonl file.')
@@ -155,6 +193,7 @@ def argparser():
     parser.add_argument('--roles_generator_templates', type=int, default=32, help='The model used to generate the dynamic roles.')
     parser.add_argument('--embedding_gnerator', type=str, default='all-MiniLM-L6-v2', help='The model used to generate embeddings for roles clustering.')
     parser.add_argument('--roles_clusters', type=int, default=4, help='Number of dynamic roles.')
+    parser.add_argument('--evaluator', type=str, default='gpt-3.5-turbo-instruct', help='The model used to evaluate the summaries.')
     return parser.parse_args()
 
 
@@ -166,6 +205,7 @@ def __main__():
 
     # Create the model
     roles_generator = OpenAI(model=args.roles_generator, temperature=0, openai_api_key=args.openai_key, model_kwargs={'seed': 42})
+    evaluation_model = OpenAI(model=args.evaluator, temperature=0, openai_api_key=args.openai_key, model_kwargs={'seed': 42})
 
     results = []
 
@@ -183,6 +223,15 @@ def __main__():
             }
             res['clustered_roles'] = roles_clustered
             results.append(res)
+        
+        # Run the evaluation
+        evaluation = evaluator(
+            evaluation_model,
+            dataset['text'],
+            dataset['summaries'],
+            roles_clustered,
+        )
+        res['evaluation'] = evaluation['text']
         break
 
     write_jsonl_file(args.out_file, results, overwrite=True)
