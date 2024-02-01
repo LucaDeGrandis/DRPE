@@ -126,7 +126,7 @@ def dynamic_role_parser(
             2. role 2: role description
             ...
     """
-    roles_raw = text.split('\n').strip()
+    roles_raw = [x.strip() for x in text.split('\n')]
     roles_raw = list(filter(lambda x: x, roles_raw))
     roles = [x[3:].strip() for x in roles_raw]
     return roles
@@ -140,7 +140,7 @@ def argparser():
     parser.add_argument('--verbose', action='store_true', help='Saves intermediate results.')
     parser.add_argument('--roles_generator', type=str, default='gpt-3.5-turbo-instruct', help='The model used to generate the dynamic roles.')
     parser.add_argument('--roles_generator_templates', type=int, default=32, help='The model used to generate the dynamic roles.')
-    parser.add_argument('--embedding_gnerator', type=str, default='bert-base-uncased', help='The model used to generate embeddings for roles clustering.')
+    parser.add_argument('--embedding_gnerator', type=str, default='all-MiniLM-L6-v2', help='The model used to generate embeddings for roles clustering.')
     parser.add_argument('--roles_clusters', type=int, default=4, help='Number of dynamic roles.')
     return parser.parse_args()
 
