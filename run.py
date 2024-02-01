@@ -72,7 +72,7 @@ def __main__():
     dataset = load_jsonl_file(args.dataset)
 
     # Create the model
-    model = OpenAI(model=args.roles_generator, temperature=0, openai_api_key=args.openai_key, model_kwargs={'seed': 42})
+    roles_generator = OpenAI(model=args.roles_generator, temperature=0, openai_api_key=args.openai_key, model_kwargs={'seed': 42})
 
     results = []
 
@@ -80,7 +80,7 @@ def __main__():
         res = {}
 
         # Generate the roles
-        coarse_grained_roles, fine_grained_roles = dynamic_roles_generator(model, _el['text'])
+        coarse_grained_roles, fine_grained_roles = dynamic_roles_generator(roles_generator, _el['text'])
         if args.verbose:
             res['generated_roles'] = {
                 'coarse_grained_roles': coarse_grained_roles,
