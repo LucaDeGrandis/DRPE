@@ -13,6 +13,7 @@ from langchain_openai import OpenAI
 from drpe.prompts.comparisons import COMPARISON_PROMPT, FEW_SHOT_PROMPT, SUFFIX_PROMPT
 from drpe.roles.static.roles import STATIC_ROLES
 from drpe.prompts.dynamic_roles import DYNAMIC_TEMPLATES
+from drpe.models.llm_map import MODELS
 
 from sklearn.cluster import KMeans
 import numpy as np
@@ -189,11 +190,11 @@ def argparser():
     parser.add_argument('out_file', type=str, help='The output path. It must be a jsonl file.')
     parser.add_argument('openai_key', type=str, help='The OpenAI key.')
     parser.add_argument('--verbose', action='store_true', help='Saves intermediate results.')
-    parser.add_argument('--roles_generator', type=str, default='gpt-3.5-turbo-instruct', help='The model used to generate the dynamic roles.')
+    parser.add_argument('--roles_generator', type=str, default='gpt-3.5-turbo-1106', help='The model used to generate the dynamic roles.')
     parser.add_argument('--roles_generator_templates', type=int, default=32, help='The model used to generate the dynamic roles.')
     parser.add_argument('--embedding_gnerator', type=str, default='all-MiniLM-L6-v2', help='The model used to generate embeddings for roles clustering.')
     parser.add_argument('--roles_clusters', type=int, default=4, help='Number of dynamic roles.')
-    parser.add_argument('--evaluator', type=str, default='gpt-3.5-turbo-instruct', help='The model used to evaluate the summaries.')
+    parser.add_argument('--evaluator', type=str, default='gpt-3.5-turbo-1106', help='The model used to evaluate the summaries.')
     return parser.parse_args()
 
 
@@ -204,8 +205,20 @@ def __main__():
     dataset = load_jsonl_file(args.dataset)
 
     # Create the model
-    roles_generator = OpenAI(model=args.roles_generator, temperature=0, openai_api_key=args.openai_key, model_kwargs={'seed': 42})
-    evaluation_model = OpenAI(model=args.evaluator, temperature=0, openai_api_key=args.openai_key, model_kwargs={'seed': 42})
+    roles_generator = MODELS[args.roles_generator](**{
+        'model': args.roles_generator,
+        'temperature': 0,
+        'openai_api_key': args.openai_key,
+        'seed': 42
+    })
+    evaluation_model = MODELS[args.roles_generator](**{
+        'model': args.evaluator,
+        'temperature': 0,
+        'openai_api_key': args.openai_key,
+        'seed': 42
+    })
+    # roles_generator = OpenAI(model=args.roles_generator, temperature=0, openai_api_key=args.openai_key, model_kwargs={'seed': 42})
+    # evaluation_model = OpenAI(model=args.evaluator, temperature=0, openai_api_key=args.openai_key, model_kwargs={'seed': 42})
 
     results = []
 
