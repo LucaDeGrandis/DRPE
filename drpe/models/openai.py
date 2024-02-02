@@ -5,7 +5,7 @@ from drpe.models.llm import Llm
 
 class LlmOpenAI(Llm):
     def __init__(self, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
     def initialize(self, **kwargs):
         self.model = OpenAI(

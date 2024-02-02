@@ -3,7 +3,7 @@
 
 DYNAMIC_COARSE_GRAINED_TEMPLATE = """Read this News: {text}
 
-Please categorize several types of users with general intent for this news:
+Please categorize several types of users with general intent for this news.
 """
 
 
