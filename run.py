@@ -11,7 +11,7 @@ from langchain.chains import LLMChain
 from langchain_openai import OpenAI
 
 from drpe.prompts.dynamic_roles import DYNAMIC_TEMPLATES
-from drpe.prompts.comparisons import COMPARISON_PROMPT, FEW_SHOT_PROMPT
+from drpe.prompts.comparisons import COMPARISON_PROMPT, FEW_SHOT_PROMPT, SUFFIX_PROMPT
 
 from sklearn.cluster import KMeans
 import numpy as np
@@ -51,7 +51,7 @@ def dynamic_roles_generator(
     input_text: str,
 ) -> Tuple[str, str]:
     """ Generates the dynamic roles
-    
+
     Args:
         model: The model used to generate the dynamic roles.
         input_text: The input text.
@@ -115,13 +115,13 @@ def dynamic_role_parser(
     text: str
 ) -> Dict[str, str]:
     """ Parses the output of LLM to extract the dynamic roles
-    
+
     Args:
         text: The output of LLM.
-    
+
     Returns:
         A list of roles.
-    
+
     Warning:
         This function is not robust to changes in the output of LLM.
         For as it is right now the LLM is expected to follow the following format:
@@ -168,8 +168,8 @@ def evaluator(
         examples=examples,
         example_prompt=example_prompt,
         prefix=COMPARISON_PROMPT,
-        input_variables = ['text', 'summary_1', 'summary_2'],
-        suffix='',
+        input_variables=['text', 'summary_1', 'summary_2'],
+        suffix=SUFFIX_PROMPT,
     )
 
     # Evaluate the summaries
@@ -180,7 +180,6 @@ def evaluator(
         'summary_1': summaries[0],
         'summary_2': summaries[1]
     })
-
 
 
 def argparser():
@@ -223,12 +222,12 @@ def __main__():
             }
             res['clustered_roles'] = roles_clustered
             results.append(res)
-        
+
         # Run the evaluation
         evaluation = evaluator(
             evaluation_model,
-            dataset['text'],
-            dataset['summaries'],
+            _el['text'],
+            _el['summaries'],
             roles_clustered,
         )
         res['evaluation'] = evaluation['text']
