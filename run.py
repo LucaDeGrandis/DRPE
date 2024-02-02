@@ -10,8 +10,9 @@ from langchain_core.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain_openai import OpenAI
 
-from drpe.prompts.dynamic_roles import DYNAMIC_TEMPLATES
 from drpe.prompts.comparisons import COMPARISON_PROMPT, FEW_SHOT_PROMPT, SUFFIX_PROMPT
+from drpe.roles.static.roles import STATIC_ROLES
+from drpe.prompts.dynamic_roles import DYNAMIC_TEMPLATES
 
 from sklearn.cluster import KMeans
 import numpy as np
@@ -221,7 +222,11 @@ def __main__():
                 'fine_grained_roles': fine_grained_roles
             }
             res['clustered_roles'] = roles_clustered
+            res['static_roles'] = STATIC_ROLES
             results.append(res)
+
+        # Add the static roles to the clusters
+        roles_clustered.extend(STATIC_ROLES)
 
         # Run the evaluation
         evaluation = evaluator(
