@@ -64,13 +64,13 @@ def dynamic_roles_generator(
     """
     # Generate coarse grained roles
     coarse_grained_prompt = PromptTemplate.from_template(DYNAMIC_TEMPLATES['coarse_grained'])
-    chain = LLMChain(llm=model, prompt=coarse_grained_prompt)
-    coarse_grained_roles = chain.invoke(input=input_text)['text']
+    model.add_prompt(coarse_grained_prompt)
+    coarse_grained_roles = model(input={'text': input_text})
 
     # Generate fine grained roles
     fine_grained_prompt = PromptTemplate.from_template(DYNAMIC_TEMPLATES['fine_grained'])
-    chain = LLMChain(llm=model, prompt=fine_grained_prompt)
-    fine_grained_roles = chain.invoke(input=input_text)['text']
+    model.add_prompt(fine_grained_prompt)
+    fine_grained_roles = model(input={'text': input_text})
 
     return coarse_grained_roles, fine_grained_roles
 

@@ -16,4 +16,4 @@ class LlmChatOpenAI(Llm):
 
     def __call__(self, input, **kwargs):
         chain = self.prompt | self.model
-        return chain.invoke(input=input)
+        return chain.invoke(input=input).content
