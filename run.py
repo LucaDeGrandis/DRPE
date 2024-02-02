@@ -6,17 +6,20 @@ import os
 from sentence_transformers import SentenceTransformer
 
 from langchain.prompts.few_shot import FewShotPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain_openai import OpenAI
 
 from drpe.prompts.comparisons import COMPARISON_PROMPT, FEW_SHOT_PROMPT, SUFFIX_PROMPT
-from drpe.roles.static.roles import STATIC_ROLES
 from drpe.prompts.dynamic_roles import DYNAMIC_TEMPLATES
+from drpe.roles.static.roles import STATIC_ROLES
 from drpe.models.llm_map import MODELS
 
 from sklearn.cluster import KMeans
+from collections import Counter
 import numpy as np
+
+
+parser = JsonOutputParser()
 
 
 def load_jsonl_file(
@@ -158,6 +161,8 @@ def evaluator(
     # Define the formatted roles for the few shot prompt template
     examples = []
     for line in roles:
+        if len(line.split(':')) < 2:
+            continue
         examples.append({
             'role_type': line.split(':')[0].strip(),
             'role_description': line.split(':')[1].strip(),
@@ -175,9 +180,9 @@ def evaluator(
     )
 
     # Evaluate the summaries
-    chain = LLMChain(llm=model, prompt=prompt)
+    model.add_prompt(prompt)
 
-    return chain.invoke(input={
+    return model(input={
         'text': input_document.replace('\n', ' ').replace('\t', ' ').replace('  ', ' '),
         'summary_1': summaries[0],
         'summary_2': summaries[1]
@@ -248,8 +253,21 @@ def __main__():
             _el['summaries'],
             roles_clustered,
         )
-        res['evaluation'] = evaluation['text']
-        break
+        res['evaluation'] = evaluation
+
+        # Parse the output
+        try:
+            parsed_evaluation = parser.parse(evaluation)
+        except: 
+            parsed_evaluation = []
+
+        if not parsed_evaluation:
+            results.append({'response': 'error'})
+            continue
+
+        scores = [x['preferred_summary'] for x in parsed_evaluation]
+        res['counts'] = Counter(scores)
+        results.append(res)
 
     write_jsonl_file(args.out_file, results, overwrite=True)
 
